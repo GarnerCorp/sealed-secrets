@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	apitypes "k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -23,7 +22,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
-	"k8s.io/utils/pointer"
 
 	"k8s.io/client-go/informers"
 
@@ -310,10 +308,7 @@ func (c *Controller) unseal(ctx context.Context, key string) (unsealErr error) {
 	}
 
 	// need to clear error state, since we're happy!
-	// need to find a component status
-	var empty []byte
-	_, err = c.ssclient.SealedSecrets(ssecret.GetObjectMeta().GetNamespace()).Patch(ctx, ssecret.GetObjectMeta().GetName(), apitypes.ApplyPatchType, empty, metav1.PatchOptions{Force: pointer.Bool(true),
-		FieldManager: "sealedsecret-controller"}, "status")
+	c.updateSealedSecretStatus(ssecret, nil)
 
 	c.recorder.Event(ssecret, corev1.EventTypeNormal, SuccessUnsealed, "SealedSecret unsealed successfully")
 	return nil
